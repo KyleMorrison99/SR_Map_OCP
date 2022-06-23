@@ -1,0 +1,99 @@
+---
+title: "Systematic_Map_Bibliometrix_Sample"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+Firstly, load in bibliometrix package
+```{r}
+library(bibliometrix)
+
+```
+
+Import bibtex file - exported sample from Scopus. The convert2df() function converts the bibtex file into a bibliometrix dataframe
+
+```{r}
+bib_sample <- convert2df("systematic_map_scopus_sample.bib",dbsource = "scopus", format = "bibtex")
+
+View(bib_sample)
+```
+
+Note that column bib_sample$AU contains authors of each paper (as surnames and initials) separated by semicolon (;). We can easily split these strings and extract a list of all author names to a vector:
+
+```{r}
+authors <- bib_sample$AU 
+ head(authors) 
+ authors <- unlist(strsplit(authors, ";")) 
+ authors <- authors[order(authors)]
+ head(authors)
+```
+
+Preliminary descriptive analysis 
+```{r}
+bib_sample_results <- biblioAnalysis(bib_sample, sep = ";")
+```
+
+Plot of analysis 
+```{r}
+plot(bib_sample_results, k = 10, pause=TRUE)
+```
+
+Using the function citations() we can generate frequency table of most cited authors
+
+```{r}
+most_cited_authors <- citations(bib_sample, field = "author", sep = ";")
+cbind(most_cited_authors$Cited[1:10])
+```
+
+Using the localCitations() we can look at local citations which are citations within the dataset, in this case the sample 
+
+```{r}
+most_cited_authors_local <- localCitations(bib_sample, sep = ";")
+most_cited_authors_local$Authors[1:10,]
+```
+
+Using biblioNetwork() we can do bibliographic coupling between authors
+```{r}
+NetMatrix <- biblioNetwork(bib_sample, analysis = "coupling", network = "authors", sep = ";")
+net = networkPlot(NetMatrix, weighted = NULL, n = 10, Title = "Authors' bibliographic coupling", type = "fruchterman", size = 5, remove.multiple = TRUE, labelsize = 0.8)
+
+```
+
+
+Using biblioNetwork() we can do bibliographic collaboration between authors
+```{r}
+NetMatrix <- biblioNetwork(bib_sample, analysis = "collaboration", network = "authors", sep = ";")
+net <- networkPlot(NetMatrix, weighted = NULL, n = 10, Title = "Authors' collaborations", type = "fruchterman", size = 5, remove.multiple = TRUE, labelsize = 0.5)
+```
+
+Country Collaborations - visualise which countries publish together most frequently
+```{r}
+bib_sample <- metaTagExtraction(bib_sample,Field = "AU_CO", sep = ";")
+NetMatrix <- biblioNetwork(bib_sample, analysis = "collaboration", network = "countries", sep = ";")
+net <- networkPlot(NetMatrix, n = 10, Title = "Country Collaboration", type = "auto", size = TRUE, remove.multiple = FALSE, labelsize = 0.5)
+```
+
+
+Keyword co-occurrences - visualise which papers share most keywords
+```{r}
+NetMatrix <- biblioNetwork(bib_sample, analysis = "co-occurrences", network = "keywords", sep = ";")
+net <- networkPlot(NetMatrix, n = 25, Title = "Keyword co-occurance", type = "fruchterman", size = T, remove.multiple = FALSE, labelsize = 0.7, edgesize = 5)
+```
+
+Author keywords - words chosen by the author to best reflect the paper 
+```{r}
+NetMatrix <- biblioNetwork(bib_sample, analysis = "co-occurrences", network = "author_keywords", sep = ";")
+net <- networkPlot(NetMatrix, n = 25, Title = "Keyword co-occurance", type = "fruchterman", size = T, remove.multiple = FALSE, labelsize = 0.7, edgesize = 5)
+
+```
+
+Historical citation network - chronological network map 
+```{r}
+bib_sample_histresults <- histNetwork(bib_sample,min.citations = 10, sep = ";")
+net <- histPlot(bib_sample_histresults, labelsize = 2)
+```
+
+
